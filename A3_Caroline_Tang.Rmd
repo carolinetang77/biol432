@@ -1,0 +1,75 @@
+---
+title: "BIOL432 Assignment 3"
+output: html_document
+---
+
+# Project Info
+Created by: Caroline Tang (20115082)  
+Github Username: [carolinetang77](https://github.com/carolinetang77/)  
+Date: Jan 25, 2022  
+[Project link](https://github.com/carolinetang77/biol432-assignment3)  
+
+# Data Wrangling
+```{r setup}
+library(dplyr)
+```
+
+Reading in the data
+```{r fallopia wrangling}
+dat <- read.csv("./InputData/FallopiaData.csv")
+```
+
+Filtering, Selecting, Adding a new column
+```{r}
+wrangled <- dat %>% 
+  #remove rows with Total < 60
+  filter(Total >= 60) %>% 
+  #select Total, Taxon, Scenario, Nutrients in that order and remove all other columns
+  select(Total, Taxon, Scenario, Nutrients) %>% 
+  #replace total (currently in mg) with total in grams
+  mutate(Total = Total/1000) %>% 
+  #name this new column TotalG
+  rename(TotalG = Total)
+print(wrangled)
+```
+
+# Custom Function
+```{r}
+calculate <- function(x, calculation) {
+  if (calculation == "Average") { #if string is "Average" calculate the mean
+    cat("Calculating mean...\n")
+    result <- mean(x, na.rm = T)
+    
+  } else if (calculation == "Sum") { #if string is "Sum" calculate the sum
+    cat("Calculating sum...\n")
+    result <- sum(x, na.rm = T)
+    
+  } else if (calculation == "Observations") { #if string is "Observations" count number of observations
+    cat("Counting up observations...\n")
+    result <- length(x)
+  } else {
+    stop(message("Calculation not recognized"))
+  }
+  return(result)
+}
+```
+### Testing the function
+
+Counting observations in Taxon column
+```{r}
+calculate(wrangled$Taxon, "Observations")
+```
+Calculating average TotalG for the high nutrient group
+```{r}
+calculate(wrangled$TotalG[wrangled$Nutrients == "high"], "Average")
+```
+Calculating average TotalG for the low nutrient group
+```{r}
+calculate(wrangled$TotalG[wrangled$Nutrients == "low"], "Average")
+```
+
+# Saving the new data
+```{r}
+write.csv(wrangled, file = "./Output/WrangledData.csv", row.names = F)
+```
+
