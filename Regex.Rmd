@@ -16,7 +16,7 @@ library(dplyr)
 
 Load in measurements data from week 1 as MData
 ```{r}
-MData <- read.csv("./InputData/measurements.csv")
+MData <- read.csv("./InputData/A4_Caroline_Tang.csv")
 ```
 
 Create a new dataset that is a copy of MData but with Sp instead of Organism, formatted as (G. species)
