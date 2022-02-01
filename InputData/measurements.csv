@@ -1,0 +1,20 @@
+Organism,Limb.length,Limb.width,Observer
+Procyon lotor,1,1,Olivier R
+Procyon pygmaeus,2,1,Han S
+Procyon cancrivorus,3,1,Luke S
+Procyon lotor,4,1,Olivier R
+Procyon pygmaeus,5,1,Olivier R
+Procyon cancrivorus,6,1,Han S
+Procyon lotor,7,1,Luke S
+Procyon pygmaeus,8,1,Luke S
+Procyon cancrivorus,9,1,Han S
+Homo sapiens,101,1,Olivier R
+Procyon pygmaeus,1,0.1,Han S
+Procyon pygmaeus,2,0.1,Luke S
+Procyon lotor,3,0.1,Han S
+Procyon pygmaeus,4,0.1,Olivier R
+Procyon cancrivorus,5,0.1,Luke S
+Procyon lotor,6,0.1,Han S
+Procyon pygmaeus,7,0.1,Luke S
+Procyon cancrivorus,8,0.1,Han S
+Procyon lotor,9,0.1,Luke S

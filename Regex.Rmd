@@ -1,0 +1,28 @@
+---
+title: "BIOL432 Assignment 4 - Caroline Tang (20115082)"
+output: html_document
+---
+# Project info
+Date: Jan 31, 2022  
+Github username: carolinetang77
+
+# Data science
+Load libraries
+```{r}
+library(dplyr)
+```
+
+Load in measurements data from week 1 as MData
+```{r}
+MData <- read.csv("./InputData/measurements.csv")
+```
+
+Create a new dataset that is a copy of MData but with Sp instead of Organism, formatted as (G. species)
+```{r }
+(short <- MData %>% mutate(Sp = gsub("(\\w)\\w+\\s+(\\w+)", "\\1. \\2", MData$Organism)) %>% 
+  select(Sp, Limb.length, Limb.width, Observer))
+```
+Save new dataset as MeasShort.csv
+```{r}
+write.csv(short, "./Output/MeasShort.csv")
+```
