@@ -1,0 +1,51 @@
+---
+title: "Assignment 5 - Caroline Tang 20115082"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+# Project info
+Date: Feb 14 2022  
+[Github repository](https://github.com/carolinetang77/biol432)  
+Github profile: [carolinetang77](https://github.com/carolinetang77)
+
+# Borrelia burgdorferi
+[Wikipedia](https://en.wikipedia.org/wiki/Borrelia_burgdorferi)  
+![Image of B. burgdorferi](https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Borrelia_burgdorferi_%28CDC-PHIL_-6631%29_lores.jpg/330px-Borrelia_burgdorferi_%28CDC-PHIL_-6631%29_lores.jpg)  
+Image also from Wikipedia
+
+# Sequence Analysis
+
+Load dplyr
+```{r}
+library(dplyr)
+```
+
+Import sequences.csv
+```{r}
+sequences <- read.csv("./A5_Tang_Caroline_Sequences.csv", header = T)
+```
+
+Print each sequence
+```{r}
+print(sequences$Sequence)
+```
+
+Count numbers of each base pair in each of the sequences
+```{r}
+nucleotides <- sequences %>% 
+  mutate(SequenceID = gsub(">(\\w+\\.\\d+).*", "\\1", sequences$Name),
+         A = nchar(gsub("[CTG]", "", sequences$Sequence)),
+         T = nchar(gsub("[ACG]", "", sequences$Sequence)),
+         C = nchar(gsub("[ATG]", "", sequences$Sequence)),
+         G = nchar(gsub("[ATC]", "", sequences$Sequence)))
+  
+print(nucleotides[c("SequenceID", "A", "T", "C", "G")])
+```
+Calculate GC content of each sequence
+```{r}
+nucleotides %>% summarise(SequenceID = SequenceID, GC = (C + G)/nchar(Sequence))
+```
+
+
