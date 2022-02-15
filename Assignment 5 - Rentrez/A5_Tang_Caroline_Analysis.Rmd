@@ -7,7 +7,7 @@ output:
 ---
 # Project info
 Date: Feb 14 2022  
-[Github repository](https://github.com/carolinetang77/biol432)  
+[Github repository](https://github.com/carolinetang77/biol432/tree/main/Assignment%205%20-%20Rentrez)  
 Github profile: [carolinetang77](https://github.com/carolinetang77)
 
 # Borrelia burgdorferi
