@@ -1,0 +1,106 @@
+---
+title: "Assignment 6 - Caroline Tang 20115082"
+output: pdf_document
+---
+# Project Info
+[Github repository]()  
+Github username: [carolinetang77](https://github.com/carolinetang77)  
+Date: 2022-03-01  
+
+# DNA Alignment
+## Load required packages
+```{r setup}
+library(annotate)
+library(ape)
+library(muscle)
+library(dplyr)
+library(Biostrings)
+library(ggplot2)
+library(ggtree)
+```
+
+## Save sequence as an object
+```{r}
+newSeq <- "ATGTCTGATAATGGACCCCAAAATCAGCGAAATGCACCCCGCATTACGTTTGGTGGACCCTCAGATTCAACTGGCAGTAACCAGAATGGAGAACGCAGTGGGGCGCGATCAAAACAACGTCGGCCCCAAGGTTTACCCAATAATACTGCGTCTTGGTTCACCGCTCTCACTCAACATGGCAAGGAAGACCTTAAATTCCCTCGAGGACAAGGCGTTCCAATTAACACCAATAGCAGTCCAGATGACCAAATTGGCTACTACCGAAGAGCTACCAGACGAATTCGTGGTGGTGACGGTAAAATGAAAGATCTCAGTCCAAGATGGTATTTCTACTACCTAGGAACTGGGCCAGAAGCTGGACTTCCCTATGGTGCTAACAAAGACGGCATCATATGGGTTGCAACTGAGGGAGCCTTGAATACACCAAAAGATCACATTGGCACCCGCAATCCTGCTAACAATGCTGCAATCGTGCTACAACTTCCTCAAGGAACAACATTGCCAAAAGGCTTCTACGCAGAAGGGAGCAGAGGCGGCAGTCAAGCCTCTTCTCGTTCCTCATCACGTAGTCGCAACAGTTCAAGAAATTCAACTCCAGGCAGCAGTAGGGGAACTTCTCCTGCTAGAATGGCTGGCAATGGCGGTGATGCTGCTCTTGCTTTGCTGCTGCTTGACAGATTGAACCAGCTTGAGAGCAAAATGTCTGGTAAAGGCCAACAACAACAAGCCAAACTGTCACTAAGAAATCTGCTGCTGAGGCTTCTAAGAAGCCTCGGCAAAAACGTACTGCCACTAAAGCATACAATGTAACACAAGCTTTCGGCAGACGTGGTCCAGAACAAACCCAAGGAAATTTTGGGGACCAGGAACTAATCAGACAAGGAACTGATTACAAACATTGGCCGCAAATTGCACAATTTGCCCCCAGCGCTTCAGCGTTCTTCGGAATGTCGCGCATTGGCATGGAAGTCACACCTTCGGGAACGTGGTTGACCTACACAGGTGCCATCAAATTGGATGACAAAGATCCAAATTTCAAAGATCAAGTCATTTTGCTGAATAAGCATATTGACGCATACAAAACATTCCCACCAACAGAGCCTAAAAAGGACAAAAAGAAGAAGGCTGATGAAACTCAAGCCTTACCGCAGAGACAGAAGAAACAGCAAACTGTGACTCTTCTTCCTGCTGCAGATTTGGATGATTTCTCCAAACAATTGCAACAATCCATGAGCAGTGCTGACTCAACTCAGGCCTAA"
+```
+
+## BLAST search for similar sequences
+```{r}
+seqBlast <- blastSequences(newSeq, as = "data.frame", hitListSize = 40, timeout = 600)
+```
+## Alignments
+Create dataframe of just hit accession IDs and the matching sequences
+```{r}
+blastDF <- data.frame(ID = seqBlast$Hit_accession,
+                      Seq = seqBlast$Hsp_hseq,
+                      stringsAsFactors = FALSE)
+#append the original sequence
+blastDF <- rbind(blastDF, data.frame(ID = "original", Seq = newSeq))
+```
+
+Convert the sequences to a DNAStringSet object
+```{r}
+blastString <- blastDF$Seq %>% 
+  as.character() %>% 
+  lapply(., paste0, collapse = "") %>% 
+  unlist() %>% 
+  DNAStringSet()
+names(blastString) <- paste0(1:nrow(blastDF), "_", blastDF$ID)
+```
+
+Align the sequences
+```{r}
+blastAlign <- muscle::muscle(stringset = blastString, quiet = T)
+```
+Check for gaps in the sequences
+```{r}
+seqLen <- as.numeric(lapply(blastString, length))
+qplot(seqLen) + theme_classic()
+```
+
+Figure 1. Histogram showing the lengths of sequences that match the original sequence
+
+The lengths of the sequences are approximately the same, so the alignment will not need to be re-adjusted.
+
+## Distance matrix
+Convert blastString to a DNAbin and create a pairwise distance matrix
+```{r}
+blastBin <- as.DNAbin(blastAlign)
+blastDM <- dist.dna(blastBin, model = "K80")
+
+#Convert to a matrix format
+blastDM <- as.matrix(blastDM)
+
+#Reshape the matrix
+blastReshape <- reshape2::melt(blastDM)
+
+#Plot the matrix
+ggplot(data = blastReshape, aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +
+  labs(x = "Sequence", y = "Sequence", fill = "Distance") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+Figure 2. A visualization of the pairwise distance matrix of the original sequence and the 40 results from the BLAST search
+
+Of the 40 hits that the BLAST search returned, all of them are identical to the original (sequence 41). Thus, finding the species identity of these sequences will likely provide an identity to the original DNA sequence.
+
+```{r}
+blastHitSeqs <- read.GenBank(seqBlast$Hit_accession)
+attr(blastHitSeqs, "species")
+```
+All the sequences seem to be from SARS-Cov-2, i.e. Covid-19. Thus the unknown DNA sequence found in the patient is likely to be from the Covid-19 virus, which would be cause for concern. We can also create a phylogeny to determine if there were any new mutations, though the unknown sequence seemed to entirely match the others.
+
+## Phylogeny
+Using the neighbour-joining method, we can create the phylogenetic tree.
+```{r, fig.height = 10, fig.width = 10}
+#calculate distances with the neighbour-joining method
+seqTree <- nj(blastDM)
+
+#plot the tree
+ggtree(seqTree, branch.length = "none", layout = "radial") +
+  geom_tiplab()
+```
+
+Figure 3. A cladogram depicting the evolutionary relationships between the different sequences
+
+As mentioned above, the unknown sequence was identical to the known sequences, and this cladogram shows that all the sequences seem to be equally related. Thus the virus from the patient likely does not contain any novel mutations.
