@@ -1,0 +1,108 @@
+---
+title: "Assignment 8 - Caroline Tang 20115082"
+output:
+  pdf_document: default
+  html_document: default
+---
+# Project Info
+[Github repository](https://github.com/carolinetang77/biol432)  
+Github username: [carolinetang77](https://github.com/carolinetang77)  
+Date: March 14, 2022  
+
+# Investigating the effects of garlic mustard on the plant community
+## Load libraries
+```{r libraries}
+library(dplyr)
+library(ggplot2)
+library(ape)
+library(vegan)
+library(ggtree)
+library(reshape2)
+```
+
+## Load data
+```{r data}
+floralSurvey <- read.csv("./A8_Tang_Caroline_Data.csv")
+```
+## Data wrangling
+I created a dataframe of just the number of species in each area, with the quadrate as the row names.
+```{r }
+floralSubset <- floralSurvey %>% 
+  select(Claytonia_virginiana:maianthenum_racemosum)
+row.names(floralSubset) <- floralSurvey$Quadrate
+```
+## Bray-Curtis Dissimilarity
+Using the Bray-Curtis dissimilarity metric, we can compare every combination of quadrates based on abundance of each plant species. If garlic mustard has an effect on the plant community, we should see greater differences between quadrates with no garlic mustard and those with garlic mustard.
+```{r}
+dist <- vegdist(floralSubset, method = "bray", binary = FALSE)
+```
+
+To see the general differences between quadrates, we can create a tile plot
+```{r}
+#convert the distance to long format
+distMat <- as.matrix(dist)
+distLong <- melt(distMat)
+
+#create the tile plot
+ggplot(data = distLong, mapping = aes(x = Var1, y = Var2, fill = value)) +
+  geom_tile() +
+  scale_fill_gradientn(colours = c("white", "blue", "green", "red")) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+Figure 1. A tile plot illustrating the differences in species abundance between each pair of quadrates  
+
+Based on the figure above, sites in the same population and same presence/absence of garlic mustard are the most similar. However, this may be more easily seen through a tree.
+
+## Neighbour joining method
+I used the neighbour joining method to create the tree, so that more similar sampling sites will be grouped together.
+```{r}
+floralNJ <- nj(dist)
+
+#create the tree
+ggtree(floralNJ, layout = "rectangular") %<+% floralSurvey +
+  geom_tree(mapping = aes(colour = Location)) +
+  geom_tiplab() +
+  scale_colour_discrete(name = "Garlic Mustard", labels = c("present", "absent"))
+```
+
+Figure 2. A tree illustrating the similarities between different sampling sites, colour-coded by presence or absence of garlic mustard.  
+
+Based on the figure, it appears that sampling sites in the same population are more similar to one another, and the effect of garlic mustard is only similar within the same populations. In addition to tree-based clustering, we can use Non-Metric Dimensional Scaling (NMDS) as a clustering method.
+
+## NMDS
+```{r}
+set.seed(13)
+floralnmds <- metaMDS(dist, k = 2)
+
+#format data for plotting
+pdat <- data.frame(NMDS1 = floralnmds$points[,1],
+                   NMDS2 = floralnmds$points[,2],
+                   Quadrate = row.names(floralSubset))
+
+#merge with original data to get plot locations and population IDs
+pdat <- merge(pdat, floralSurvey, by = "Quadrate", all.x = T, all.y = T)
+```
+
+We can plot the results to see the effect of garlic mustard
+```{r}
+#plot to see effect of garlic mustard
+ggplot(data = pdat, aes(x = NMDS1, y = NMDS2, colour = Location)) +
+  geom_point(size = 2) +
+  scale_colour_discrete(labels = c("present", "absent"), name = "Garlic Mustard") +
+  theme_classic()
+```
+Figure 3. A scatter plot showing the results of the NMDS analysis, colour coded by presence or absence of garlic mustard
+
+Based on the figure above, there doesn't seem to be any noticeable effect of garlic mustard on the plant community as the two groups are not clustered together. However, we can also look at the effects of sampling population, to see if the different populations have a greater influence on the plant community.
+```{r}
+#plot to see effect of sampling population
+ggplot(data = pdat, aes(x = NMDS1, y = NMDS2, colour = factor(Population), shape = Location)) +
+  geom_point(size = 2) +
+  scale_colour_discrete(name = "Population") +
+  theme_classic()
+```
+Figure 3. A scatter plot showing the results of the NMDS analysis, colour coded by sampling population
+
+As points from the same populations tend to be closer together, it seems that the sampling population has a greater effect on the plant community than presence or absence of garlic mustard. However, within populations, the sampling sites appear to be somewhat grouped by presence or absence of garlic mustard.
+
